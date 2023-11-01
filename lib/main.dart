@@ -1,7 +1,9 @@
+import 'dart:ui';
+
+import 'package:adwaita/adwaita.dart';
 import 'package:first_app/Device.dart';
 import 'package:first_app/DeviceManager.dart';
 import 'package:flutter/material.dart';
-import 'package:adwaita/adwaita.dart';
 
 void main() {
   DeviceManager.init();
@@ -12,123 +14,178 @@ class MyApp extends StatelessWidget {
   MyApp({super.key});
 
   final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
         title: 'Filter Device Manager',
-        theme: AdwaitaThemeData.light(),
+        theme: AdwaitaThemeData.dark(),
         darkTheme: AdwaitaThemeData.dark(),
         debugShowCheckedModeBanner: false,
         home: ListenableBuilder(
           listenable: DeviceManager(),
           builder: (BuildContext context, Widget? child) {
-            return FlNavBar(title: "App", deviceManager: DeviceManager());
+            return DeviceMainList(title: "App", deviceManager: DeviceManager());
           },
         ));
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class BottomBar extends StatelessWidget {
+  const BottomBar({super.key, required this.deviceManager});
 
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+  final DeviceManager deviceManager;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+    return BottomAppBar(
+      shape: const CircularNotchedRectangle(),
+      child: Row(
+        children: <Widget>[
+          IconButton(
+            tooltip: 'Return',
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
+          ),
+          IconButton(
+            tooltip: 'Servers',
+            icon: const Icon(Icons.cable),
+            onPressed: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          ServerView(deviceManager: deviceManager)));
+            },
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
 
-class FlNavBar extends StatefulWidget {
-  const FlNavBar({super.key, required this.title, required this.deviceManager});
+class BottomBarServers extends StatelessWidget {
+  const BottomBarServers({super.key, required this.deviceManager});
+
+  final DeviceManager deviceManager;
+
+  @override
+  Widget build(BuildContext context) {
+    return BottomAppBar(
+      shape: const CircularNotchedRectangle(),
+      child: Row(
+        children: <Widget>[
+          IconButton(
+            tooltip: 'Return',
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ServerView extends StatelessWidget {
+  const ServerView({super.key, required this.deviceManager});
+
+  final DeviceManager deviceManager;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        child: const Icon(Icons.add),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+      bottomNavigationBar: BottomBarServers(deviceManager: deviceManager),
+      body: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(
+          physics: const BouncingScrollPhysics(),
+          dragDevices: {
+            PointerDeviceKind.touch,
+            PointerDeviceKind.mouse,
+            PointerDeviceKind.trackpad
+          },
+        ),
+        child: RefreshIndicator(
+          onRefresh: deviceManager.reload,
+          child: ListenableBuilder(
+              listenable: deviceManager,
+              builder: (BuildContext context, Widget? child) {
+                return ListView.builder(
+                    itemCount: deviceManager.getAllServers().length,
+                    itemBuilder: (context, index) {
+                      final item = deviceManager.getAllServers()[index];
+                      return ListTile(
+                        textColor: item.connected() ? null : Colors.red,
+                        title: Text(item.name()),
+                        subtitle: Text(item.kind()),
+                        onTap: () {},
+                      );
+                    });
+              }),
+        ),
+      ),
+    );
+  }
+}
+
+class DeviceMainList extends StatefulWidget {
+  const DeviceMainList(
+      {super.key, required this.title, required this.deviceManager});
 
   final String title;
   final DeviceManager deviceManager;
 
   @override
-  State<FlNavBar> createState() => _FlNavbarState();
+  State<DeviceMainList> createState() => _DeviceMainListState();
 }
 
-class _FlNavbarState extends State<FlNavBar> {
+class _DeviceMainListState extends State<DeviceMainList> {
   int topIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: NavigationBar(
-        onDestinationSelected: (int index) {
-          setState(() {
-            topIndex = index;
-          });
-        },
-        indicatorColor: Colors.amber[800],
-        selectedIndex: topIndex,
-        destinations: const <Widget>[
-          NavigationDestination(
-            selectedIcon: Icon(Icons.home),
-            icon: Icon(Icons.home_outlined),
-            label: 'Devices',
+      bottomNavigationBar: BottomBar(deviceManager: widget.deviceManager),
+      body: Container(
+        alignment: Alignment.center,
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(
+            physics: const BouncingScrollPhysics(),
+            dragDevices: {
+              PointerDeviceKind.touch,
+              PointerDeviceKind.mouse,
+              PointerDeviceKind.trackpad,
+            },
           ),
-          NavigationDestination(
-            icon: Icon(Icons.business),
-            label: 'Servers',
-          ),
-        ],
-      ),
-      body: <Widget>[
-        Container(
-            alignment: Alignment.center,
+          child: RefreshIndicator(
+            onRefresh: widget.deviceManager.reload,
             child: DeviceList(
-              deviceManager: DeviceManager(),
-            )),
-        Container(
-          color: Colors.green,
-          alignment: Alignment.center,
-          child: const Text('Page 2'),
+              deviceManager: widget.deviceManager,
+            ),
+          ),
         ),
-      ][topIndex],
+      ),
     );
   }
 }
 
 class DeviceList extends StatelessWidget {
-  DeviceList({super.key, required this.deviceManager});
+  const DeviceList({super.key, required this.deviceManager});
 
-  DeviceManager deviceManager;
+  final DeviceManager deviceManager;
 
   @override
   Widget build(BuildContext context) {
@@ -169,39 +226,9 @@ class DeviceViewState extends State<DeviceView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('AppBar Demo'),
-      ),
-      bottomNavigationBar: NavigationBar(
-        onDestinationSelected: (int index) {
-          setState(() {
-            topIndex = index;
-          });
-        },
-        indicatorColor: Colors.amber[800],
-        selectedIndex: topIndex,
-        destinations: const <Widget>[
-          NavigationDestination(
-            selectedIcon: Icon(Icons.home),
-            icon: Icon(Icons.home_outlined),
-            label: 'Debug',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.business),
-            label: 'Other Stuff',
-          ),
-        ],
-      ),
-      body: [
-        Container(
-            alignment: Alignment.center,
-            child: DebugView(device: widget.device)),
-        Container(
-          color: Colors.green,
-          alignment: Alignment.center,
-          child: const Text('Other stuff'),
-        ),
-      ][topIndex],
+      bottomNavigationBar: BottomBar(deviceManager: DeviceManager()),
+      body: Container(
+          alignment: Alignment.center, child: DebugView(device: widget.device)),
     );
   }
 }
@@ -240,20 +267,20 @@ class DebugViewState extends State<DebugView> {
             ),
           ], rows: [
             DataRow(cells: [
-              DataCell(Text("Name")),
+              const DataCell(Text("Name")),
               DataCell(Text(widget.device.name ?? "N/A")),
             ]),
             DataRow(cells: [
-              DataCell(Text("Waterlevel")),
+              const DataCell(Text("Waterlevel")),
               DataCell(
                   Text(widget.device.currentState().waterlevel.toString())),
             ]),
             DataRow(cells: [
-              DataCell(Text("Waterleak")),
+              const DataCell(Text("Waterleak")),
               DataCell(Text(widget.device.currentState().leak.toString())),
             ]),
             DataRow(cells: [
-              DataCell(Text("State")),
+              const DataCell(Text("State")),
               DataCell(
                   Text(widget.device.currentState().filter_state.toString())),
             ]),

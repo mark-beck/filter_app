@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 
 import 'Device.dart';
@@ -41,6 +39,14 @@ class DeviceManager with ChangeNotifier {
 
   List<Server> getAllServers() {
     return List.from(_servers);
+  }
+
+  Future<void> reload() async {
+    _devices.clear();
+    for (final server in _servers) {
+      await loadServerDevices(server);
+    }
+    notifyListeners();
   }
 
   void addServer(Server server) {
