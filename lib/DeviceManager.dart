@@ -1,12 +1,15 @@
+import 'dart:developer';
 
-import 'package:first_app/Connection.dart';
+import 'package:flutter/material.dart';
 
 import 'Device.dart';
+import 'ws_server.dart';
 
-class DeviceManager {
+class DeviceManager with ChangeNotifier {
   static DeviceManager? _cache;
-  Device _mockDevice = Device(MockConnection());
+
   List<Device> _devices = [];
+  List<Server> _servers = [];
 
   factory DeviceManager() {
     if (_cache != null) {
@@ -16,17 +19,32 @@ class DeviceManager {
     return _cache!;
   }
 
-  DeviceManager._create();
+  Future<void> loadServerDevices(Server server) async {
+    final ids = await server.getDeviceIds();
+    for (final id in ids) {
+      _devices.add(server.getDevice(id));
+    }
+  }
+
+  DeviceManager._create() {
+    addServer(MockServer());
+    addServer(WSServer("192.168.122.1", 4000, ""));
+  }
 
   static void init() {
     _cache = DeviceManager._create();
   }
 
-  Device get mockdevice => _mockDevice;
-
   List<Device> getAllDevices() {
-    List<Device> res = List.from(_devices);
-    res.add(_mockDevice);
-    return res;
+    return List.from(_devices);
+  }
+
+  List<Server> getAllServers() {
+    return List.from(_servers);
+  }
+
+  void addServer(Server server) {
+    _servers.add(server);
+    loadServerDevices(server).then((value) => notifyListeners());
   }
 }

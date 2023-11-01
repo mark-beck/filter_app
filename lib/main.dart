@@ -1,28 +1,35 @@
 import 'package:first_app/Device.dart';
 import 'package:first_app/DeviceManager.dart';
 import 'package:flutter/material.dart';
-import 'package:fluent_ui/fluent_ui.dart' as fl;
+import 'package:adwaita/adwaita.dart';
 
 void main() {
   DeviceManager.init();
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
-class MyApp extends fl.StatelessWidget {
-  const MyApp({super.key});
+class MyApp extends StatelessWidget {
+  MyApp({super.key});
 
+  final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return fl.FluentApp(
-      title: 'Flutter Demo',
-      theme: fl.FluentThemeData(),
-      home: const FlNavBar(title: "App"),
-    );
+    return MaterialApp(
+        title: 'Filter Device Manager',
+        theme: AdwaitaThemeData.light(),
+        darkTheme: AdwaitaThemeData.dark(),
+        debugShowCheckedModeBanner: false,
+        home: ListenableBuilder(
+          listenable: DeviceManager(),
+          builder: (BuildContext context, Widget? child) {
+            return FlNavBar(title: "App", deviceManager: DeviceManager());
+          },
+        ));
   }
 }
 
-class MyHomePage extends fl.StatefulWidget {
+class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
   final String title;
@@ -31,7 +38,7 @@ class MyHomePage extends fl.StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends fl.State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
   void _incrementCounter() {
@@ -66,65 +73,140 @@ class _MyHomePageState extends fl.State<MyHomePage> {
   }
 }
 
-class FlNavBar extends fl.StatefulWidget {
-  const FlNavBar({super.key, required this.title});
+class FlNavBar extends StatefulWidget {
+  const FlNavBar({super.key, required this.title, required this.deviceManager});
 
   final String title;
+  final DeviceManager deviceManager;
 
   @override
   State<FlNavBar> createState() => _FlNavbarState();
 }
 
-class _FlNavbarState extends fl.State<FlNavBar> {
+class _FlNavbarState extends State<FlNavBar> {
   int topIndex = 0;
-
-  List<fl.NavigationPaneItem> items = [
-    fl.PaneItem(
-      icon: const Icon(fl.FluentIcons.home),
-      title: const Text('Home'),
-      body: const MyHomePage(title: "home"),
-    ),
-    fl.PaneItemSeparator(),
-    fl.PaneItem(
-      icon: const Icon(fl.FluentIcons.connect_virtual_machine),
-      title: const Text('connections'),
-      body: Container(
-        color: Colors.green,
-        alignment: Alignment.center,
-        child: const Text('Connections'),
-      ),
-    ),
-    fl.PaneItemExpander(
-      icon: const Icon(fl.FluentIcons.add_phone),
-      title: const Text("Devices"),
-      body: const Text("List of all Devices"),
-      items: DeviceManager()
-          .getAllDevices()
-          .map((Device dev) => fl.PaneItem(
-              icon: const Icon(fl.FluentIcons.decimals),
-              title: Text(dev.name ?? "Unknown"),
-              body: DebugView(device: dev)))
-          .toList(),
-    )
-  ];
 
   @override
   Widget build(BuildContext context) {
-    return fl.NavigationView(
-      appBar: const fl.NavigationAppBar(
-        title: Text('NavigationView'),
+    return Scaffold(
+      bottomNavigationBar: NavigationBar(
+        onDestinationSelected: (int index) {
+          setState(() {
+            topIndex = index;
+          });
+        },
+        indicatorColor: Colors.amber[800],
+        selectedIndex: topIndex,
+        destinations: const <Widget>[
+          NavigationDestination(
+            selectedIcon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined),
+            label: 'Devices',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.business),
+            label: 'Servers',
+          ),
+        ],
       ),
-      pane: fl.NavigationPane(
-        selected: topIndex,
-        onChanged: (index) => setState(() => topIndex = index),
-        displayMode: fl.PaneDisplayMode.compact,
-        items: items,
-      ),
+      body: <Widget>[
+        Container(
+            alignment: Alignment.center,
+            child: DeviceList(
+              deviceManager: DeviceManager(),
+            )),
+        Container(
+          color: Colors.green,
+          alignment: Alignment.center,
+          child: const Text('Page 2'),
+        ),
+      ][topIndex],
     );
   }
 }
 
-class DebugView extends fl.StatefulWidget {
+class DeviceList extends StatelessWidget {
+  DeviceList({super.key, required this.deviceManager});
+
+  DeviceManager deviceManager;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+        listenable: deviceManager,
+        builder: (BuildContext context, Widget? child) {
+          return ListView.builder(
+              itemCount: deviceManager.getAllDevices().length,
+              itemBuilder: (context, index) {
+                final item = deviceManager.getAllDevices()[index];
+                return ListTile(
+                  title: Text(item.name ?? "Unknown"),
+                  subtitle: Text(item.id ?? "what?"),
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => DeviceView(device: item)));
+                  },
+                );
+              });
+        });
+  }
+}
+
+class DeviceView extends StatefulWidget {
+  final Device device;
+
+  const DeviceView({required this.device, super.key});
+
+  @override
+  State<StatefulWidget> createState() => DeviceViewState();
+}
+
+class DeviceViewState extends State<DeviceView> {
+  int topIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('AppBar Demo'),
+      ),
+      bottomNavigationBar: NavigationBar(
+        onDestinationSelected: (int index) {
+          setState(() {
+            topIndex = index;
+          });
+        },
+        indicatorColor: Colors.amber[800],
+        selectedIndex: topIndex,
+        destinations: const <Widget>[
+          NavigationDestination(
+            selectedIcon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined),
+            label: 'Debug',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.business),
+            label: 'Other Stuff',
+          ),
+        ],
+      ),
+      body: [
+        Container(
+            alignment: Alignment.center,
+            child: DebugView(device: widget.device)),
+        Container(
+          color: Colors.green,
+          alignment: Alignment.center,
+          child: const Text('Other stuff'),
+        ),
+      ][topIndex],
+    );
+  }
+}
+
+class DebugView extends StatefulWidget {
   final Device device;
 
   const DebugView({required this.device, super.key});
@@ -133,10 +215,10 @@ class DebugView extends fl.StatefulWidget {
   State<StatefulWidget> createState() => DebugViewState();
 }
 
-class DebugViewState extends fl.State<DebugView> {
+class DebugViewState extends State<DebugView> {
   @override
   Widget build(BuildContext context) {
-    return fl.ListenableBuilder(
+    return ListenableBuilder(
         listenable: widget.device,
         builder: (BuildContext context, Widget? child) {
           return DataTable(columns: const [
@@ -163,15 +245,17 @@ class DebugViewState extends fl.State<DebugView> {
             ]),
             DataRow(cells: [
               DataCell(Text("Waterlevel")),
-              DataCell(Text(widget.device.waterlevel?.toString() ?? "N/A")),
+              DataCell(
+                  Text(widget.device.currentState().waterlevel.toString())),
             ]),
             DataRow(cells: [
               DataCell(Text("Waterleak")),
-              DataCell(Text(widget.device.leak.toString())),
+              DataCell(Text(widget.device.currentState().leak.toString())),
             ]),
             DataRow(cells: [
               DataCell(Text("State")),
-              DataCell(Text(widget.device.state?.toString() ?? "N/A")),
+              DataCell(
+                  Text(widget.device.currentState().filter_state.toString())),
             ]),
           ]);
         });
