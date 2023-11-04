@@ -1,7 +1,7 @@
 import 'dart:developer';
 
-import 'package:first_app/Connection.dart';
-import 'package:first_app/Device.dart';
+import 'package:first_app/connection.dart';
+import 'package:first_app/device.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -16,7 +16,7 @@ sealed class Server {
 class WSServer extends Server {
   final String _url;
   final int _port;
-  String _auth_token;
+  final String _authToken;
   bool _connected = false;
 
   @override
@@ -30,7 +30,7 @@ class WSServer extends Server {
 
   static const apiPath = "/api/v1";
 
-  WSServer(this._url, this._port, this._auth_token);
+  WSServer(this._url, this._port, this._authToken);
 
   @override
   Future<List<String>> getDeviceIds() async {

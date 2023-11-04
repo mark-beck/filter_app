@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:first_app/device_info.dart';
 
-import 'Event.dart';
+import 'event.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:async/async.dart';
@@ -38,6 +38,7 @@ class WSDeviceConnection implements DeviceConnection {
     final path = "http://$_url:$_port$apiPath/device/$_id";
     final resp = await http.get(Uri.parse(path));
     final map = jsonDecode(resp.body) as Map<String, dynamic>;
+    log(map.toString(), name: "WsDeviceConnection.getDeviceInfo");
     return DeviceInfo.fromJson(map);
   }
 
@@ -45,6 +46,7 @@ class WSDeviceConnection implements DeviceConnection {
   Future<DeviceConfig> getDeviceConfig() async {
     final path = "http://$_url:$_port$apiPath/device/$_id/config";
     final resp = await http.get(Uri.parse(path));
+    log(resp.toString(), name: "WsDeviceConnection.getDeviceConfig");
     final map = jsonDecode(resp.body) as Map<String, dynamic>;
     return DeviceConfig.fromJson(map);
   }
@@ -53,6 +55,7 @@ class WSDeviceConnection implements DeviceConnection {
   Future<StateEvent> getLastState() async {
     final path = "http://$_url:$_port$apiPath/device/$_id/history/last";
     final resp = await http.get(Uri.parse(path));
+    log(resp.toString(), name: "WsDeviceConnection.getLastState");
     final map = jsonDecode(resp.body) as Map<String, dynamic>;
     return StateEvent.fromJson(map);
   }
@@ -62,8 +65,10 @@ class WSDeviceConnection implements DeviceConnection {
     final path =
         "http://$_url:$_port$apiPath/device/$_id/history?from=${start.millisecondsSinceEpoch}&to=${end.millisecondsSinceEpoch}";
     final resp = await http.get(Uri.parse(path));
+    log(resp.toString(), name: "WsDeviceConnection.getStateHistory");
     final list = jsonDecode(resp.body) as List<dynamic>;
-    return list.map((e) => StateEvent.fromJson(e)).toList();
+    final list2 = list.map((e) => StateEvent.fromJson(e)).toList();
+    return list2;
   }
 
   @override
@@ -101,15 +106,16 @@ class MockConnection implements DeviceConnection {
   late Stream<StateEvent> _eventStream;
   late StreamController<StateEvent> _propertyStream;
 
-  DeviceInfo _info = DeviceInfo(
+  final DeviceInfo _info = DeviceInfo(
       id: "0000000000000000",
       name: "MockDevice",
       token: "",
       type: 1,
       firmwareVersion: 1,
-      lastSeen: DateTime.now());
+      lastSeen: DateTime.now(),
+      baseline: 200);
 
-  DeviceConfig _config = DeviceConfig(
+  final DeviceConfig _config = DeviceConfig(
       waterlevelFillStart: 100,
       waterlevelFillEnd: 10,
       cleanBeforeFillDuration: 3000,
@@ -121,17 +127,16 @@ class MockConnection implements DeviceConnection {
     Stream<StateEvent> periodicStream = Stream.periodic(
         const Duration(seconds: 1),
         (a) => StateEvent(
-            id: "1111111111111",
             time: DateTime.now(),
-            filter_state: State.idle,
-            forced_time_left: 0,
-            last_state_change: DateTime.now(),
+            filterState: State.idle,
+            forcedTimeLeft: 0,
+            lastStateChange: DateTime.now(),
             waterlevel: a,
-            measurement_error: false,
-            measurement_error_occured: DateTime.now(),
-            measurement_error_count: 0,
+            measurementError: false,
+            measurementErrorOccured: DateTime.now(),
+            measurementErrorCount: 0,
             leak: false,
-            leak_occured: DateTime.now()));
+            leakOccured: DateTime.now()));
 
     StreamGroup<StateEvent> streamGroup = StreamGroup();
     streamGroup
@@ -154,17 +159,16 @@ class MockConnection implements DeviceConnection {
   @override
   Future<StateEvent> getLastState() async {
     return StateEvent(
-        id: "1111111111111",
         time: DateTime.now(),
-        filter_state: State.idle,
-        forced_time_left: 0,
-        last_state_change: DateTime.now(),
+        filterState: State.idle,
+        forcedTimeLeft: 0,
+        lastStateChange: DateTime.now(),
         waterlevel: 100,
-        measurement_error: false,
-        measurement_error_occured: DateTime.now(),
-        measurement_error_count: 0,
+        measurementError: false,
+        measurementErrorOccured: DateTime.now(),
+        measurementErrorCount: 0,
         leak: false,
-        leak_occured: DateTime.now());
+        leakOccured: DateTime.now());
   }
 
   @override
@@ -177,65 +181,60 @@ class MockConnection implements DeviceConnection {
   Future<List<StateEvent>> getStateHistory(DateTime start, DateTime end) async {
     return [
       StateEvent(
-          id: "1111111111111",
           time: DateTime.now(),
-          filter_state: State.idle,
-          forced_time_left: 0,
-          last_state_change: DateTime.now(),
-          waterlevel: 100,
-          measurement_error: false,
-          measurement_error_occured: DateTime.now(),
-          measurement_error_count: 0,
+          filterState: State.idle,
+          forcedTimeLeft: 0,
+          lastStateChange: DateTime.now(),
+          waterlevel: 10,
+          measurementError: false,
+          measurementErrorOccured: DateTime.now(),
+          measurementErrorCount: 0,
           leak: false,
-          leak_occured: DateTime.now()),
+          leakOccured: DateTime.now()),
       StateEvent(
-          id: "1111111111111",
-          time: DateTime.now(),
-          filter_state: State.idle,
-          forced_time_left: 0,
-          last_state_change: DateTime.now(),
-          waterlevel: 100,
-          measurement_error: false,
-          measurement_error_occured: DateTime.now(),
-          measurement_error_count: 0,
+          time: DateTime.now().subtract(const Duration(minutes: 10)),
+          filterState: State.idle,
+          forcedTimeLeft: 0,
+          lastStateChange: DateTime.now(),
+          waterlevel: 20,
+          measurementError: false,
+          measurementErrorOccured: DateTime.now(),
+          measurementErrorCount: 0,
           leak: false,
-          leak_occured: DateTime.now()),
+          leakOccured: DateTime.now()),
       StateEvent(
-          id: "1111111111111",
-          time: DateTime.now(),
-          filter_state: State.idle,
-          forced_time_left: 0,
-          last_state_change: DateTime.now(),
-          waterlevel: 100,
-          measurement_error: false,
-          measurement_error_occured: DateTime.now(),
-          measurement_error_count: 0,
+          time: DateTime.now().subtract(const Duration(minutes: 20)),
+          filterState: State.idle,
+          forcedTimeLeft: 0,
+          lastStateChange: DateTime.now(),
+          waterlevel: 30,
+          measurementError: false,
+          measurementErrorOccured: DateTime.now(),
+          measurementErrorCount: 0,
           leak: false,
-          leak_occured: DateTime.now()),
+          leakOccured: DateTime.now()),
       StateEvent(
-          id: "1111111111111",
-          time: DateTime.now(),
-          filter_state: State.idle,
-          forced_time_left: 0,
-          last_state_change: DateTime.now(),
-          waterlevel: 100,
-          measurement_error: false,
-          measurement_error_occured: DateTime.now(),
-          measurement_error_count: 0,
+          time: DateTime.now().subtract(const Duration(minutes: 30)),
+          filterState: State.idle,
+          forcedTimeLeft: 0,
+          lastStateChange: DateTime.now(),
+          waterlevel: 40,
+          measurementError: false,
+          measurementErrorOccured: DateTime.now(),
+          measurementErrorCount: 0,
           leak: false,
-          leak_occured: DateTime.now()),
+          leakOccured: DateTime.now()),
       StateEvent(
-          id: "1111111111111",
-          time: DateTime.now(),
-          filter_state: State.idle,
-          forced_time_left: 0,
-          last_state_change: DateTime.now(),
-          waterlevel: 100,
-          measurement_error: false,
-          measurement_error_occured: DateTime.now(),
-          measurement_error_count: 0,
+          time: DateTime.now().subtract(const Duration(minutes: 40)),
+          filterState: State.idle,
+          forcedTimeLeft: 0,
+          lastStateChange: DateTime.now(),
+          waterlevel: 30,
+          measurementError: false,
+          measurementErrorOccured: DateTime.now(),
+          measurementErrorCount: 0,
           leak: false,
-          leak_occured: DateTime.now())
+          leakOccured: DateTime.now())
     ];
   }
 
@@ -244,17 +243,16 @@ class MockConnection implements DeviceConnection {
     switch (command) {
       case c.ForceStateCommand():
         _propertyStream.add(StateEvent(
-            id: "1111111111111",
             time: DateTime.now(),
-            filter_state: State.idle,
-            forced_time_left: 0,
-            last_state_change: DateTime.now(),
+            filterState: State.idle,
+            forcedTimeLeft: 0,
+            lastStateChange: DateTime.now(),
             waterlevel: 100,
-            measurement_error: false,
-            measurement_error_occured: DateTime.now(),
-            measurement_error_count: 0,
+            measurementError: false,
+            measurementErrorOccured: DateTime.now(),
+            measurementErrorCount: 0,
             leak: false,
-            leak_occured: DateTime.now()));
+            leakOccured: DateTime.now()));
         break;
     }
   }

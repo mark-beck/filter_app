@@ -1,8 +1,9 @@
 import 'dart:ui';
 
 import 'package:adwaita/adwaita.dart';
-import 'package:first_app/Device.dart';
-import 'package:first_app/DeviceManager.dart';
+import 'package:first_app/device.dart';
+import 'package:first_app/device_manager.dart';
+import 'package:first_app/view/plot.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -198,7 +199,7 @@ class DeviceList extends StatelessWidget {
                 final item = deviceManager.getAllDevices()[index];
                 return ListTile(
                   title: Text(item.name ?? "Unknown"),
-                  subtitle: Text(item.id ?? "what?"),
+                  subtitle: Text(item.id),
                   onTap: () {
                     Navigator.push(
                         context,
@@ -245,46 +246,56 @@ class DebugView extends StatefulWidget {
 class DebugViewState extends State<DebugView> {
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-        listenable: widget.device,
-        builder: (BuildContext context, Widget? child) {
-          return DataTable(columns: const [
-            DataColumn(
-              label: Expanded(
-                child: Text(
-                  'Measurement',
-                  style: TextStyle(fontStyle: FontStyle.italic),
+    return ListView(children: <Widget>[
+      ListenableBuilder(
+          listenable: widget.device,
+          builder: (BuildContext context, Widget? child) {
+            return DataTable(columns: const [
+              DataColumn(
+                label: Expanded(
+                  child: Text(
+                    'Measurement',
+                    style: TextStyle(fontStyle: FontStyle.italic),
+                  ),
                 ),
               ),
-            ),
-            DataColumn(
-              label: Expanded(
-                child: Text(
-                  'Value',
-                  style: TextStyle(fontStyle: FontStyle.italic),
+              DataColumn(
+                label: Expanded(
+                  child: Text(
+                    'Value',
+                    style: TextStyle(fontStyle: FontStyle.italic),
+                  ),
                 ),
               ),
-            ),
-          ], rows: [
-            DataRow(cells: [
-              const DataCell(Text("Name")),
-              DataCell(Text(widget.device.name ?? "N/A")),
-            ]),
-            DataRow(cells: [
-              const DataCell(Text("Waterlevel")),
-              DataCell(
-                  Text(widget.device.currentState().waterlevel.toString())),
-            ]),
-            DataRow(cells: [
-              const DataCell(Text("Waterleak")),
-              DataCell(Text(widget.device.currentState().leak.toString())),
-            ]),
-            DataRow(cells: [
-              const DataCell(Text("State")),
-              DataCell(
-                  Text(widget.device.currentState().filter_state.toString())),
-            ]),
-          ]);
-        });
+            ], rows: [
+              DataRow(cells: [
+                const DataCell(Text("Name")),
+                DataCell(Text(widget.device.name ?? "N/A")),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text("Waterlevel")),
+                DataCell(
+                    Text(widget.device.currentState().waterlevel.toString())),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text("Waterleak")),
+                DataCell(Text(widget.device.currentState().leak.toString())),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text("State")),
+                DataCell(
+                    Text(widget.device.currentState().filterState.toString())),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text("last_event_time")),
+                DataCell(Text(widget.device.currentState().time.toString())),
+              ]),
+            ]);
+          }),
+      UpdatingWaterlevelChart(
+          device: widget.device, duration: const Duration(minutes: 5)),
+      WaterlevelChart(
+          device: widget.device, duration: const Duration(minutes: 60)),
+    ]);
   }
 }

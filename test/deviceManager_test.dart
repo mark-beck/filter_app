@@ -1,4 +1,4 @@
-import 'package:first_app/DeviceManager.dart';
+import 'package:first_app/device_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

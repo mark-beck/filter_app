@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import 'Device.dart';
+import 'device.dart';
 import 'ws_server.dart';
 
 class DeviceManager with ChangeNotifier {
   static DeviceManager? _cache;
 
-  List<Device> _devices = [];
-  List<Server> _servers = [];
+  final List<Device> _devices = [];
+  final List<Server> _servers = [];
 
   factory DeviceManager() {
     if (_cache != null) {

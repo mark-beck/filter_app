@@ -8,6 +8,7 @@ class ForceStateCommand extends Command {
 
   ForceStateCommand(this.state, this.time);
 
+  @override
   Map<String, dynamic> toJson() => {
         'state': state.toString().split('.').last,
         'time': time,

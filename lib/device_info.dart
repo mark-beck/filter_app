@@ -5,6 +5,7 @@ class DeviceInfo {
   num type;
   num firmwareVersion;
   DateTime lastSeen;
+  int? baseline;
 
   DeviceInfo({
     required this.id,
@@ -13,6 +14,7 @@ class DeviceInfo {
     required this.type,
     required this.firmwareVersion,
     required this.lastSeen,
+    required this.baseline,
   });
 
   factory DeviceInfo.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class DeviceInfo {
       type: json['type'],
       firmwareVersion: json['firmware_version'],
       lastSeen: DateTime.fromMillisecondsSinceEpoch(json['last_seen']),
+      baseline: json['baseline'],
     );
   }
 }
