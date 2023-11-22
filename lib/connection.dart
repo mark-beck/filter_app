@@ -106,6 +106,10 @@ class MockConnection implements DeviceConnection {
   late Stream<StateEvent> _eventStream;
   late StreamController<StateEvent> _propertyStream;
 
+  bool sendEvent;
+
+  MockConnection({this.sendEvent = true});
+
   final DeviceInfo _info = DeviceInfo(
       id: "0000000000000000",
       name: "MockDevice",
@@ -173,7 +177,11 @@ class MockConnection implements DeviceConnection {
 
   @override
   Stream<StateEvent> receiveEvents() {
-    initCombinedStream();
+    if (sendEvent) {
+      initCombinedStream();
+    } else {
+      _eventStream = const Stream.empty();
+    }
     return _eventStream;
   }
 
@@ -181,7 +189,7 @@ class MockConnection implements DeviceConnection {
   Future<List<StateEvent>> getStateHistory(DateTime start, DateTime end) async {
     return [
       StateEvent(
-          time: DateTime.now(),
+          time: DateTime.now().subtract(const Duration(minutes: 1)),
           filterState: State.idle,
           forcedTimeLeft: 0,
           lastStateChange: DateTime.now(),

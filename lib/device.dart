@@ -28,31 +28,47 @@ class Device with ChangeNotifier {
       _baseline = value.baseline;
       notifyListeners();
     });
-    final event = _connection.getLastState();
-    event.then((e) => _eventhistory.add(e));
     receiveEvents();
   }
 
   Future<List<StateEvent>> getStateEvents(DateTime start, DateTime end) async {
-    final oldestTimeKnown = _oldestEventLocal();
-    if (start.isBefore(oldestTimeKnown)) {
-      final oldEvents = await _connection.getStateHistory(start, oldestTimeKnown);
+    final oldestTimeKnown = oldestEventLocal();
+
+    if (oldestTimeKnown == null) {
+      final oldEvents = await _connection.getStateHistory(start, end);
+      _eventhistory.addAll(oldEvents);
+      _oldestEventArrived = start;
+    } else if (start.isBefore(oldestTimeKnown)) {
+      final oldEvents =
+          await _connection.getStateHistory(start, oldestTimeKnown);
       _eventhistory.addAll(oldEvents);
       _oldestEventArrived = start;
     }
-    return _eventhistory.toList().where((e) => e.time.isAfter(start) && e.time.isBefore(end)).toList();
-  }
-  
-  DateTime _oldestEventLocal() {
-    return _oldestEventArrived ?? _eventhistory.toList().map((e) => e.time).reduce((DateTime value, element) => (value.isBefore(element) ? value : element));
+
+    return _eventhistory
+        .toList()
+        .where((e) => e.time.isAfter(start) && e.time.isBefore(end))
+        .toList();
   }
 
+  DateTime? oldestEventLocal() {
+    if (_eventhistory.isEmpty) {
+      return null;
+    }
+    return _oldestEventArrived ??
+        _eventhistory.toList().map((e) => e.time).reduce(
+            (DateTime value, element) =>
+                (value.isBefore(element) ? value : element));
+  }
 
   Future<DeviceConfig> deviceConfig() {
     return _connection.getDeviceConfig();
   }
 
-  StateEvent currentState() {
+  Future<StateEvent> currentState() async {
+    if (_eventhistory.isEmpty) {
+      return await _connection.getLastState();
+    }
     return _eventhistory.first;
   }
 

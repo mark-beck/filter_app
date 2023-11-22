@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:adwaita/adwaita.dart';
 import 'package:first_app/device.dart';
 import 'package:first_app/device_manager.dart';
+import 'package:first_app/event.dart' as event;
 import 'package:first_app/view/plot.dart';
 import 'package:flutter/material.dart';
 
@@ -260,51 +261,61 @@ class DebugViewState extends State<DebugView> {
     return ListenableBuilder(
         listenable: widget.device,
         builder: (BuildContext context, Widget? child) {
-          return DataTable(columns: const [
-            DataColumn(
-              label: Expanded(
-                child: Text(
-                  'Measurement',
-                  style: TextStyle(fontStyle: FontStyle.italic),
-                ),
-              ),
-            ),
-            DataColumn(
-              label: Expanded(
-                child: Text(
-                  'Value',
-                  style: TextStyle(fontStyle: FontStyle.italic),
-                ),
-              ),
-            ),
-          ], rows: [
-            DataRow(cells: [
-              const DataCell(Text("Name")),
-              DataCell(Text(widget.device.name ?? "N/A")),
-            ]),
-            DataRow(cells: [
-              const DataCell(Text("Waterlevel")),
-              DataCell(
-                  Text(widget.device.currentState().waterlevel.toString())),
-            ]),
-            DataRow(cells: [
-              const DataCell(Text("Waterleak")),
-              DataCell(Text(widget.device.currentState().leak.toString())),
-            ]),
-            DataRow(cells: [
-              const DataCell(Text("State")),
-              DataCell(
-                  Text(widget.device.currentState().filterState.toString())),
-            ]),
-            DataRow(cells: [
-              const DataCell(Text("last_event_time")),
-              DataCell(Text(widget.device.currentState().time.toString())),
-            ]),
-            DataRow(cells: [
-              const DataCell(Text("baseline")),
-              DataCell(Text(widget.device.baseline.toString())),
-            ]),
-          ]);
+          return FutureBuilder(
+              future: widget.device.currentState(),
+              builder: (BuildContext context,
+                  AsyncSnapshot<event.StateEvent> snapshot) {
+                if (snapshot.hasData) {
+                  return DataTable(columns: const [
+                    DataColumn(
+                      label: Expanded(
+                        child: Text(
+                          'Measurement',
+                          style: TextStyle(fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Expanded(
+                        child: Text(
+                          'Value',
+                          style: TextStyle(fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                    ),
+                  ], rows: [
+                    DataRow(cells: [
+                      const DataCell(Text("Name")),
+                      DataCell(Text(widget.device.name ?? "N/A")),
+                    ]),
+                    DataRow(cells: [
+                      const DataCell(Text("Waterlevel")),
+                      DataCell(Text(snapshot.data!.waterlevel.toString())),
+                    ]),
+                    DataRow(cells: [
+                      const DataCell(Text("Waterleak")),
+                      DataCell(Text(snapshot.data!.leak.toString())),
+                    ]),
+                    DataRow(cells: [
+                      const DataCell(Text("State")),
+                      DataCell(Text(snapshot.data!.filterState.toString())),
+                    ]),
+                    DataRow(cells: [
+                      const DataCell(Text("last_event_time")),
+                      DataCell(Text(snapshot.data!.time.toString())),
+                    ]),
+                    DataRow(cells: [
+                      const DataCell(Text("baseline")),
+                      DataCell(Text(widget.device.baseline.toString())),
+                    ]),
+                  ]);
+                }
+                return const SizedBox(
+                  width: 60,
+                  height: 60,
+                  child: CircularProgressIndicator(),
+                );
+              });
         });
   }
 }
@@ -352,12 +363,11 @@ class DeviceConfigView extends StatelessWidget {
                               const DataCell(Text("fill start")),
                               DataCell(
                                 TextField(
-                                    obscureText: true,
-                                    decoration: InputDecoration(
-                                        border: const OutlineInputBorder(),
-                                        hintText : config
-                                            .data!.waterlevelFillStart
-                                            .toString()),
+                                  obscureText: true,
+                                  decoration: InputDecoration(
+                                      border: const OutlineInputBorder(),
+                                      hintText: config.data!.waterlevelFillStart
+                                          .toString()),
                                 ),
                               )
                             ]),
