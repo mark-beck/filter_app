@@ -27,6 +27,7 @@ class DeviceManager with ChangeNotifier {
   DeviceManager._create() {
     addServer(MockServer());
     addServer(WSServer("192.168.122.1", 4000, ""));
+    addServer(WSServer("192.168.36.116", 4000, ""));
   }
 
   static void init() {

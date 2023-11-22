@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:ui';
 
 import 'package:adwaita/adwaita.dart';
@@ -21,8 +22,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
         title: 'Filter Device Manager',
+        // theme: ThemeData(
+        //   colorSchemeSeed: const Color(0xff6750a4),
+        //   useMaterial3: true,
+        // ),
         theme: AdwaitaThemeData.dark(),
-        darkTheme: AdwaitaThemeData.dark(),
         debugShowCheckedModeBanner: false,
         home: ListenableBuilder(
           listenable: DeviceManager(),
@@ -227,10 +231,17 @@ class DeviceViewState extends State<DeviceView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: BottomBar(deviceManager: DeviceManager()),
-      body: Container(
-          alignment: Alignment.center, child: DebugView(device: widget.device)),
-    );
+        bottomNavigationBar: BottomBar(deviceManager: DeviceManager()),
+        body: ListView(
+          children: [
+            DeviceConfigView(device: widget.device),
+            DebugView(device: widget.device),
+            UpdatingWaterlevelChart(
+                device: widget.device, duration: const Duration(minutes: 5)),
+            WaterlevelChart(
+                device: widget.device, duration: const Duration(minutes: 60)),
+          ],
+        ));
   }
 }
 
@@ -246,56 +257,163 @@ class DebugView extends StatefulWidget {
 class DebugViewState extends State<DebugView> {
   @override
   Widget build(BuildContext context) {
-    return ListView(children: <Widget>[
-      ListenableBuilder(
-          listenable: widget.device,
-          builder: (BuildContext context, Widget? child) {
-            return DataTable(columns: const [
-              DataColumn(
-                label: Expanded(
-                  child: Text(
-                    'Measurement',
-                    style: TextStyle(fontStyle: FontStyle.italic),
-                  ),
+    return ListenableBuilder(
+        listenable: widget.device,
+        builder: (BuildContext context, Widget? child) {
+          return DataTable(columns: const [
+            DataColumn(
+              label: Expanded(
+                child: Text(
+                  'Measurement',
+                  style: TextStyle(fontStyle: FontStyle.italic),
                 ),
               ),
-              DataColumn(
-                label: Expanded(
-                  child: Text(
-                    'Value',
-                    style: TextStyle(fontStyle: FontStyle.italic),
-                  ),
+            ),
+            DataColumn(
+              label: Expanded(
+                child: Text(
+                  'Value',
+                  style: TextStyle(fontStyle: FontStyle.italic),
                 ),
               ),
-            ], rows: [
-              DataRow(cells: [
-                const DataCell(Text("Name")),
-                DataCell(Text(widget.device.name ?? "N/A")),
-              ]),
-              DataRow(cells: [
-                const DataCell(Text("Waterlevel")),
-                DataCell(
-                    Text(widget.device.currentState().waterlevel.toString())),
-              ]),
-              DataRow(cells: [
-                const DataCell(Text("Waterleak")),
-                DataCell(Text(widget.device.currentState().leak.toString())),
-              ]),
-              DataRow(cells: [
-                const DataCell(Text("State")),
-                DataCell(
-                    Text(widget.device.currentState().filterState.toString())),
-              ]),
-              DataRow(cells: [
-                const DataCell(Text("last_event_time")),
-                DataCell(Text(widget.device.currentState().time.toString())),
-              ]),
-            ]);
-          }),
-      UpdatingWaterlevelChart(
-          device: widget.device, duration: const Duration(minutes: 5)),
-      WaterlevelChart(
-          device: widget.device, duration: const Duration(minutes: 60)),
-    ]);
+            ),
+          ], rows: [
+            DataRow(cells: [
+              const DataCell(Text("Name")),
+              DataCell(Text(widget.device.name ?? "N/A")),
+            ]),
+            DataRow(cells: [
+              const DataCell(Text("Waterlevel")),
+              DataCell(
+                  Text(widget.device.currentState().waterlevel.toString())),
+            ]),
+            DataRow(cells: [
+              const DataCell(Text("Waterleak")),
+              DataCell(Text(widget.device.currentState().leak.toString())),
+            ]),
+            DataRow(cells: [
+              const DataCell(Text("State")),
+              DataCell(
+                  Text(widget.device.currentState().filterState.toString())),
+            ]),
+            DataRow(cells: [
+              const DataCell(Text("last_event_time")),
+              DataCell(Text(widget.device.currentState().time.toString())),
+            ]),
+            DataRow(cells: [
+              const DataCell(Text("baseline")),
+              DataCell(Text(widget.device.baseline.toString())),
+            ]),
+          ]);
+        });
+  }
+}
+
+class DeviceConfigView extends StatelessWidget {
+  final Device device;
+
+  const DeviceConfigView({required this.device, super.key});
+
+  void openConfig(context) {
+    showModalBottomSheet(
+        isScrollControlled: true,
+        context: context,
+        builder: (context) {
+          return FutureBuilder(
+            future: device.deviceConfig(),
+            builder: (context, config) {
+              if (config.hasData) {
+                return FractionallySizedBox(
+                    heightFactor: 0.6,
+                    alignment: FractionalOffset.bottomCenter,
+                    child: ListView(
+                      children: [
+                        DataTable(
+                          columns: const [
+                            DataColumn(
+                              label: Expanded(
+                                child: Text(
+                                  'Config',
+                                  style: TextStyle(fontStyle: FontStyle.italic),
+                                ),
+                              ),
+                            ),
+                            DataColumn(
+                              label: Expanded(
+                                child: Text(
+                                  'Value',
+                                  style: TextStyle(fontStyle: FontStyle.italic),
+                                ),
+                              ),
+                            ),
+                          ],
+                          rows: [
+                            DataRow(cells: [
+                              const DataCell(Text("fill start")),
+                              DataCell(
+                                TextField(
+                                    obscureText: true,
+                                    decoration: InputDecoration(
+                                        border: const OutlineInputBorder(),
+                                        hintText : config
+                                            .data!.waterlevelFillStart
+                                            .toString()),
+                                ),
+                              )
+                            ]),
+                            DataRow(cells: [
+                              const DataCell(Text("fill end")),
+                              DataCell(Text(
+                                  config.data!.waterlevelFillEnd.toString())),
+                            ]),
+                            DataRow(cells: [
+                              const DataCell(Text("clean before fill")),
+                              DataCell(Text(config.data!.cleanBeforeFillDuration
+                                  .toString())),
+                            ]),
+                            DataRow(cells: [
+                              const DataCell(Text("clean after fill")),
+                              DataCell(Text(config.data!.cleanAfterFillDuration
+                                  .toString())),
+                            ]),
+                          ],
+                        ),
+                      ],
+                    ));
+              } else if (config.hasError) {
+                var error = config.error;
+                var trace = config.stackTrace;
+                log("error: $error", stackTrace: trace);
+                return Center(
+                  child: Text("Error loading chart: $error"),
+                );
+              } else {
+                return const SizedBox(
+                  width: 60,
+                  height: 60,
+                  child: CircularProgressIndicator(),
+                );
+              }
+            },
+          );
+        });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+        padding: const EdgeInsets.all(4.0),
+        child: Column(
+          children: [
+            ListTile(
+              title: const Text("Config"),
+              onTap: () => openConfig(context),
+            ),
+            ListTile(
+              title: const Text("Config"),
+              onTap: () => openConfig(context),
+            )
+          ],
+        ));
   }
 }

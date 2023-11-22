@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:first_app/device_info.dart';
 import 'package:flutter/material.dart';
 
 import 'connection.dart';
@@ -44,6 +45,11 @@ class Device with ChangeNotifier {
   
   DateTime _oldestEventLocal() {
     return _oldestEventArrived ?? _eventhistory.toList().map((e) => e.time).reduce((DateTime value, element) => (value.isBefore(element) ? value : element));
+  }
+
+
+  Future<DeviceConfig> deviceConfig() {
+    return _connection.getDeviceConfig();
   }
 
   StateEvent currentState() {

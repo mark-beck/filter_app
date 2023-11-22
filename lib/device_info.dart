@@ -47,11 +47,11 @@ class DeviceConfig {
 
   factory DeviceConfig.fromJson(Map<String, dynamic> json) {
     return DeviceConfig(
-      waterlevelFillStart: json['waterlevelFillStart'],
-      waterlevelFillEnd: json['waterlevelFillEnd'],
-      cleanBeforeFillDuration: json['cleanBeforeFillDuration'],
-      cleanAfterFillDuration: json['cleanAfterFillDuration'],
-      leakProtection: json['leakProtection'],
+      waterlevelFillStart: json['waterlevel_fill_start'],
+      waterlevelFillEnd: json['waterlevel_fill_end'],
+      cleanBeforeFillDuration: json['clean_before_fill_duration'],
+      cleanAfterFillDuration: json['clean_after_fill_duration'],
+      leakProtection: json['leak_protection'],
     );
   }
 }
