@@ -1,16 +1,8 @@
-# first_app
+# filter_app
 
-A new Flutter project.
+filter_app ist eine App zur Kontrolle von Wasserfiltern
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Das komplette System besteht aus:
+1. [Ein Raspberry Pi Pico zur Kontrolle der Ventile und Messung des Wasserstandes](https://github.com/mark-beck/filter_pico/)
+2. [Ein Server zur Kommunikation zwischen App und Pi Pico](https://github.com/mark-beck/filter_server)
+3. Eine App zum auslesen und konfigurieren des Wasserfilters (diese Repo)
